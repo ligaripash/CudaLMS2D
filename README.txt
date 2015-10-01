@@ -1,10 +1,10 @@
-LMS Regression using Guided Topological sweep in degenerate cases - 
+GPU-Based Computation of 2D Least Median of Squares - 
                  Description of the code
 ---------------------------------------------------------------
 Author: Gil Shapira, Open University Israel
 Last updated: October 1, 2015
 
-This readme file describes the LMS regression code that is located for download in http://www.eecs.tufts.edu/r/geometry/lms. It is based on teh topological sweep code that is located in  http://www.eecs.tufts.edu/r/geometry/sweep and includes only minor changes. For more details on the structure of teh code see the README file located in teh later directory.
+This readme file describes the CUDA based LMS regression code that is located for download in https://github.com/ligaripash/CudaLMS2D.git.
 Additional information about the algorithm and its time complexity is located in this site as well.
 The code is written in C++ and does not use any geometrical libraries for computations. Geomview is used to output the data in a geometrical way to the screen.
 
