@@ -31,8 +31,9 @@ For instance:
 11 12
 22.2 22
 33.1 11
+10 9
 
-Is a valid input file containing 3 points.
+Is a valid input file containing 4 points.
 
 
 2. Output
