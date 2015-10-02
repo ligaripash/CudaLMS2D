@@ -655,14 +655,10 @@ void LMS2D::dumpGIVFile()
 	float x_coord = mLMSLineSlope;
 	float y_coord = mLMSLineIntercept;
 	float min_bracelet = mLMSMinBracelet;
-//	static int index = 0;
 	stringstream st;
 	st << "dump_cuda_lms.giv";
 	ofstream file(st.str());
 
-	//gil
-//	file << "$image "  << "noise.png" << endl;
-	//First draw the input points
 	file << "$noline" << endl <<
 	"$marks circle" << endl;
 
