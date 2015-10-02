@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LMSCudaNew", "LMSCudaNew\LMSCudaNew.vcxproj", "{3B4EB557-60D8-4EF8-8F84-F455F0054CAD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0125EBA5-EAEF-4787-AC8F-C7052A091AD9}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\..\temp\fast_gpu_based_2d_lms_and_applications.pdf = ..\..\..\temp\fast_gpu_based_2d_lms_and_applications.pdf
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

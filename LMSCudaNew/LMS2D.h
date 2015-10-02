@@ -5,7 +5,7 @@
 class LMS2D
 {
 public:
-	LMS2D(int max_point_count);
+	LMS2D();
 
 	~LMS2D();
 
@@ -40,7 +40,7 @@ private:
 
 	//float* mDeviceInteresectionPointsAndYSeparation;
 
-	float* mDeviceYcoordinatesPerVerticalLine;
+	//float* mDeviceYcoordinatesPerVerticalLine;
 
 	float* mDeviceIntersectionPoints;
 
@@ -68,7 +68,7 @@ private:
 	float mLMSLineIntercept;
 	float mLMSMinBracelet;
 
-	int mMaxPointCount;
+	//int mMaxPointCount;
 
 //	__global__ void computeDualLinesKernel(float* input_points, float* output_lines);
 
