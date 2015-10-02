@@ -86,79 +86,6 @@ __device__ float calcYatXIntersection(int line_index, float* input_lines, float 
 }
 
 
-/*******************************************************************************************************/
-
-
-
-
-__device__ void calculateMinBracelet(float intersection_p_x, 
-									 float intersection_p_y, 
-									 float* input_lines, 
-									 int lines_count, 
-									 int index_for_x_coord_per_intersection_point, 
-									 float* y_intersection_per_vertical_line,
-									 float* min_y_bracelet,
-									 float*  bracelet_mid_point)
-{
-
-	//so..
-	//Now we have an intersection point. We have to calculate the min k bracelet starting at this intersection point.
-	//at first attempt we'll do the following:
-
-	//1. calculate all intersection points with the line X=Xint.
-	//2. Sort these points according to their y coordinate.
-	//3. Find minimum bracelet for the point.
-	//4. Find the minimum bracelet of all points.
-
-	
-	int intersection_points_count = lines_count * ( lines_count - 1) / 2;
-
-	int index = index_for_x_coord_per_intersection_point;
-	for (int i = 0; i < 256; i++){
-		float line_y_at_x_intersection = calcYatXIntersection(i, input_lines, intersection_p_x);
-//		float line_y_at_x_intersection = 20.0;
-		y_intersection_per_vertical_line[index] = line_y_at_x_intersection;
-		index += intersection_points_count;
-	}
-
-	// do selection sort
-	
-	int index_of_min = -1;
-	float min_value;
-	
-
-	// now find the min bracelet for this intersecion point
-
-	int k = lines_count / 2 ; // the median
-	index = index_for_x_coord_per_intersection_point;
-	min_value = FLT_MAX;
-
-	int index_end_bracelet = index + k * intersection_points_count;
-
-	for (int i = 0; i < k; i++){
-
-		float delta = y_intersection_per_vertical_line[index_end_bracelet] - y_intersection_per_vertical_line[index];
-		//float delta = 2.2;
-		if (delta < min_value){
-			min_value = delta;
-			index_of_min = i;
-		}
-		index_end_bracelet += intersection_points_count;
-		index += intersection_points_count;
-	}
-
-	// this is the mid point of the bracelet.
-	
-	*min_y_bracelet = min_value;
-
-	*bracelet_mid_point	= y_intersection_per_vertical_line[index_for_x_coord_per_intersection_point + index_of_min * intersection_points_count] + min_value / 2;
-
-}
-
-
-
-
-
 
 
 /*******************************************************************************************************/
@@ -179,11 +106,7 @@ __device__ void calculateInstersectionPoint(int col, int row, float* lines, floa
 	float n2 = lines[2*row + 1];
 
 	if ( m1 == m2 ){
-		//	printf("m1 == m2 at row = $d and col = $d", row, col);
-		//m1 += FLT_MIN;
-		//		*intersection_p_x = *intersection_p_y = -99999.0f;
-		//printf("line ");
-		//return;
+		// Handle degenrecies
 		*intersection_p_x = FLT_MAX;
 
 		*intersection_p_y = FLT_MAX;
