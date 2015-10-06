@@ -32,22 +32,15 @@ LMS2D::LMS2D()
 LMS2D::~LMS2D()
 {
 
-//	cudaFree(mDeviceYcoordinatesPerVerticalLine);
 	cudaFree(mDeviceIntersectionPoints);
 	cudaFree(mDeviceMinBraceletPerIntersectionPoint);
 	cudaFree(mDeviceMinBraceletMidPintPerIntersectionPoint);
 	cudaFree(mDeviceInputLines);
 	
-	
-	delete [] mHostInputLines;
-	//free(mHostInputLines);
-	free(mHostMinBraceletMidPintPerIntersectionPoint);
-	//free(mHostMinBraceletPerIntersectionPoint );
-	//free(mHostIntersectionPoints);
-//	free(mHostMinBraceletReductionOutput);
-	 
 
-	
+	delete [] mHostInputLines;
+	free(mHostMinBraceletReductionOutput);
+	 
 
 	cudaError_t cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
@@ -544,6 +537,7 @@ void LMS2D::compute()
 
 	cudaDeviceSynchronize();
 
+#ifdef PERF
 	LARGE_INTEGER freq;
 	QueryPerformanceFrequency(&freq);
 
@@ -565,16 +559,18 @@ void LMS2D::compute()
 	cudaEventCreate(&min_stop);
 
 	cudaEventRecord( cuda_start, 0 );
+#endif
+
 
 	computeIntersectionPoints<<<dimGrid, dimBlock>>>(mDeviceInputLines,
 													 mInputPointsCount,
 													 mDeviceIntersectionPoints );
 
-
+#ifdef PERF
 	cudaEventRecord( cuda_stop, 0 );
 	cudaEventSynchronize( cuda_stop );
 	cudaEventElapsedTime( &time_intersection_points, cuda_start, cuda_stop );
-
+#endif
 
 	dim3 dim_block_bracelet(1, mInputPointsCount / 2);
 
@@ -583,7 +579,10 @@ void LMS2D::compute()
 	
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
+
+#ifdef PERF
 	cudaEventRecord( sstart, 0 );
+#endif
 
 	cudaError_t rc;
 	FindMinimalBraceletPerIntersectionPoint<<<dim_grid_bracelet, dim_block_bracelet, mInputPointsCount * 4>>>(mDeviceInputLines, 
@@ -594,11 +593,10 @@ void LMS2D::compute()
 
 
 	rc = cudaGetLastError();
+#ifdef PERF
 	cudaEventRecord( sstop, 0 );
 	cudaEventSynchronize( sstop );
 	cudaEventElapsedTime( &time_bracelet_per_itersection_point, sstart, sstop );
-
-
 
     cudaDeviceSynchronize();
 	QueryPerformanceCounter(&end);
@@ -606,186 +604,29 @@ void LMS2D::compute()
 
 	cudaEventRecord( min_start, 0 );
 
+#endif
 
 	findGlobalMinBracelet(&mLMSLineSlope, &mLMSMinBracelet, &mLMSLineIntercept);
 	
-	
-   cudaEventRecord( min_stop, 0 );
-   cudaEventSynchronize( min_stop );
-   cudaEventElapsedTime( &time_minimum_bracelet, min_start, min_stop );
+#ifdef PERF	
+	cudaEventRecord( min_stop, 0 );
+	cudaEventSynchronize( min_stop );
+	cudaEventElapsedTime( &time_minimum_bracelet, min_start, min_stop );
 
 
 
-   //double time = (double)(end.QuadPart - start.QuadPart) / 1000.0;
+	//double time = (double)(end.QuadPart - start.QuadPart) / 1000.0;
 
-   cout << "Time intersection points computation = " << time_intersection_points   << std::endl;
-   cout << "Time bracelet per intersection points computation = " << time_bracelet_per_itersection_point   << std::endl;
-   cout << "Time minimum bracelet computation = " << time_minimum_bracelet   << std::endl;
-   cout << "Total time = " <<  (double)(end.QuadPart - start.QuadPart) / (freq.QuadPart / 1000.0)   << std::endl;
-
-   cout << endl << "LMS line slope = " << mLMSLineSlope << " Intercept = " << mLMSLineIntercept << " Min bracelet = " << mLMSMinBracelet << endl;
-
-
-  // dumpGIVFile(mLMSLineSlope, mLMSLineIntercept, mLMSMinBracelet);
+	cout << "Time intersection points computation = " << time_intersection_points   << std::endl;
+	cout << "Time bracelet per intersection points computation = " << time_bracelet_per_itersection_point   << std::endl;
+	cout << "Time minimum bracelet computation = " << time_minimum_bracelet   << std::endl;
+	cout << "Total time = " <<  (double)(end.QuadPart - start.QuadPart) / (freq.QuadPart / 1000.0)   << std::endl;
 
 
 	cudaEventDestroy( cuda_start );
 	cudaEventDestroy( cuda_stop );
-
-#if 0
-	cudaMemcpy(mHostMinBraceletMidPintPerIntersectionPoint, mDeviceMinBraceletMidPintPerIntersectionPoint,mInputIntersectionPointCount * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpy(mHostMinBraceletPerIntersectionPoint, mDeviceMinBraceletPerIntersectionPoint,mInputIntersectionPointCount * sizeof(float), cudaMemcpyDeviceToHost);
-	//for now skip the cuda reduction and copy to the host.
-	//cudaMemcpy(mHostIntersectionPoints, mDeviceIntersectionPoints,2 * mInputIntersectionPointCount * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpy(mHostIntersectionPoints, mDeviceMinBraceletReductionOutput,MAX_POINT_COUNT * sizeof(float), cudaMemcpyDeviceToHost);
 #endif	
 
-
-}
-
-
-
-/*******************************************************************************************************/
-
-
-
-void LMS2D::dumpGIVFile()
-{
-
-	float x_coord = mLMSLineSlope;
-	float y_coord = mLMSLineIntercept;
-	float min_bracelet = mLMSMinBracelet;
-	stringstream st;
-	st << "dump_cuda_lms.giv";
-	ofstream file(st.str());
-
-	file << "$noline" << endl <<
-	"$marks circle" << endl;
-
-	float min_x = FLT_MAX;
-	float min_y = FLT_MAX;
-	float max_x = FLT_MIN;
-	float max_y = FLT_MIN;
-
-
-	for (int i = 0; i < this->mInputPointsCount; i++){
-		float x = this->mHostInputLines[2*i];
-		float y = -this->mHostInputLines[2*i + 1];
-
-		if ( x < min_x){
-			min_x = x;
-		}
-
-		if ( y < min_y){
-			min_y = y;
-		}
-
-		if ( x > max_x){
-			max_x = x;
-		}
-
-		if (y > max_y){
-			max_y = y;
-		}
-
-		file << x << " " << y << endl;
-	}
-
-	//draw the LMS line
-
-	file << endl << endl;
-
-	file << "$line LMS" << endl;
-	file << "$color blue" << endl;
-
-	float left_x = min_x;
-	float left_y = left_x * x_coord + y_coord;
-
-	float right_x = max_x;
-	float right_y = right_x * x_coord + y_coord;
-
-	file << left_x << " " << left_y << endl;
-	file << right_x << " " << right_y << endl;
-
-	//draw the slab
-
-
-	file << endl << endl;
-
-	file << "$line UpperSLAB" << endl;
-	file << "$color yellow" << endl;
-
-	left_y = left_x * x_coord + y_coord + min_bracelet / 2;
-	right_y = right_x * x_coord + y_coord + min_bracelet / 2;
-
-	file << left_x << " " << left_y << endl;
-	file << right_x << " " << right_y << endl;
-
-	file << endl << endl;
-
-	file << "$line LowerSLAB" << endl;
-	file << "$color yellow" << endl;
-
-	left_y = left_x * x_coord + y_coord - min_bracelet / 2;
-	right_y = right_x * x_coord + y_coord - min_bracelet / 2;
-
-	file << left_x << " " << left_y << endl;
-	file << right_x << " " << right_y << endl;
-
-
-	//here we draw the results of the reference top sweep algorithm
-#if 0
-
-	float top_slope, top_intercept, top_slab_width;
-	ifstream top_data("topological_sweep.out"); 
-
-	top_data >> top_slope >> top_intercept >> top_slab_width;
-
-	//draw the LMS line
-
-	file << endl << endl;
-
-	file << "$line LMS Top" << endl;
-	file << "$color purple" << endl;
-
-	left_x = min_x;
-	left_y = left_x * top_slope + top_intercept;
-
-	right_x = max_x;
-	right_y = right_x * top_slope + top_intercept;
-
-	file << left_x << " " << left_y << endl;
-	file << right_x << " " << right_y << endl;
-
-	//draw the slab
-
-
-	file << endl << endl;
-
-	file << "$line UpperSLAB Top" << endl;
-	file << "$color orange" << endl;
-
-	left_y = left_x * top_slope + top_intercept + top_slab_width / 2;
-	right_y = right_x * top_slope + top_intercept + top_slab_width / 2;
-
-	file << left_x << " " << left_y << endl;
-	file << right_x << " " << right_y << endl;
-
-	file << endl << endl;
-
-	file << "$line LowerSLAB top" << endl;
-	file << "$color orange" << endl;
-
-	left_y = left_x * top_slope + top_intercept - top_slab_width / 2;
-	right_y = right_x * top_slope + top_intercept - top_slab_width / 2;
-
-	file << left_x << " " << left_y << endl;
-	file << right_x << " " << right_y << endl;
-
-	
-#endif	
-	
-	//file << result.a << " " << result.b << " " << result.width << endl;
 
 }
 
@@ -800,12 +641,13 @@ void LMS2D::compute(float* input_points, int input_points_count, float* lms_line
 {
 	mInputPointsCount = input_points_count;
 
+	//transform input points to the lines dual.
 	for (int i = 0; i < mInputPointsCount; i++){
 		mHostInputLines[2*i] = input_points[2*i]; //x -> m
 		mHostInputLines[2*i + 1] = -input_points[2*i + 1]; //y -> -n
 	}
 
-		// We need two floats per line
+	// copy lines to device memory
 	cudaError_t cudaStatus = cudaMemcpy(mDeviceInputLines, mHostInputLines, mInputPointsCount * 2 * sizeof(float), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         cerr << "cudaMemcpy failed!";
@@ -849,7 +691,7 @@ void LMS2D::allocate()
     if (cudaStatus != cudaSuccess) {
         cerr << "cudaMalloc failed!";
     }
-	//gil
+	
 #if 0
 	int total_y_coordinates_count = max_intersection_point_count * MAX_POINT_COUNT;
 
@@ -874,106 +716,6 @@ void LMS2D::allocate()
     if (cudaStatus != cudaSuccess) {
         cerr << "cudaMalloc failed!";
     }
-
-
-	mHostMinBraceletMidPintPerIntersectionPoint = (float*)malloc(max_intersection_point_count * sizeof(float));
-
-	mHostMinBraceletPerIntersectionPoint = (float*)malloc(max_intersection_point_count * sizeof(float));
-
-	mHostIntersectionPoints = (float*)malloc(2 * max_intersection_point_count * sizeof(float));
-
-	mHostMinBraceletReductionOutput = (float*)malloc(MAX_POINT_COUNT * sizeof(float));
-
-}
-
-
-/*******************************************************************************************************/
-
-void LMS2D::readInputFromFile(const char* file_name)
-{
-	//1. Read input points from file
-
-	ifstream input_point_file(file_name);
-	
-	//int points_count;
-
-	input_point_file >> mInputPointsCount;
-
-	int dim;
-
-	input_point_file >> dim;
-
-	//allocate host 
-
-	mHostInputLines = new float[mInputPointsCount*2]; //2 floats per point
-	for (int i = 0; i < mInputPointsCount; i++){
-		input_point_file >> mHostInputLines[2*i]; //x -> m
-		float temp;
-		input_point_file >> temp;
-		mHostInputLines[2*i + 1] = -temp; //y -> -n
-	}
-
-	// move input data to device
-
-	
-    cudaError_t cudaStatus = cudaMalloc((void**)&mDeviceInputLines, mInputPointsCount * 2 * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMalloc failed!";
-    }
-
-
-	// We need two floats per line
-	cudaStatus = cudaMemcpy(mDeviceInputLines, mHostInputLines, mInputPointsCount * 2 * sizeof(float), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMemcpy failed!";
-    }
-
-
-	//Allocate data for intersection points and maximal y separation
-	//We have n(n-1) / 2 instersection points and n intersections of every line with the vertical line going through each intersection point.
-	//Total: n * (n - 1) / 2 intersection points. Each point hold 2 float (x and y). = n(n-1) floats.
-	//in addition we need  n*n*(n-1)/2 floats. total = n(n-1) + n*n*(n-1) / 2
-
-
-	mInputIntersectionPointCount = mInputPointsCount * (mInputPointsCount - 1) / 2 ;
-
-    cudaStatus = cudaMalloc((void**)&mDeviceIntersectionPoints , 2 * mInputIntersectionPointCount * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMalloc failed!";
-    }
-
-
-	//gil
-#if 0
-	int total_y_coordinates_count = mInputIntersectionPointCount * mInputPointsCount;
-    cudaStatus = cudaMalloc((void**)&mDeviceYcoordinatesPerVerticalLine, total_y_coordinates_count * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMalloc failed!";
-    }
-#endif
-	
-    cudaStatus = cudaMalloc((void**)&mDeviceMinBraceletReductionOutput, MAX_POINT_COUNT * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMalloc failed!";
-    }
-
-
-    cudaStatus = cudaMalloc((void**)&mDeviceMinBraceletPerIntersectionPoint, mInputIntersectionPointCount * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMalloc failed!";
-    }
-
-    cudaStatus = cudaMalloc((void**)&mDeviceMinBraceletMidPintPerIntersectionPoint, mInputIntersectionPointCount * sizeof(float));
-    if (cudaStatus != cudaSuccess) {
-        cerr << "cudaMalloc failed!";
-    }
-
-
-	mHostMinBraceletMidPintPerIntersectionPoint = (float*)malloc(mInputIntersectionPointCount * sizeof(float));
-
-	mHostMinBraceletPerIntersectionPoint = (float*)malloc(mInputIntersectionPointCount * sizeof(float));
-
-	mHostIntersectionPoints = (float*)malloc(2 * mInputIntersectionPointCount * sizeof(float));
 
 	mHostMinBraceletReductionOutput = (float*)malloc(MAX_POINT_COUNT * sizeof(float));
 

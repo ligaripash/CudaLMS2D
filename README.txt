@@ -1,21 +1,22 @@
-GPU-Based Computation of 2D Least Median of Squares - 
-                 Description of the code
+GPU-Based Computation of 2D Least Median of Squares 
 ---------------------------------------------------------------
-Author: Gil Shapira, Open University Israel
-Last updated: October 1, 2015
 
-This readme file describes the CUDA based LMS regression code that is located for download in https://github.com/ligaripash/CudaLMS2D.git.
-This project is a part of a research paper which can be found here: https://github.com/ligaripash/CudaLMS2D/files/5884/fast_gpu_based_2d_lms_and_applications.pdf
 
+This code accompanies the paper:
+Gil Shapira and Tal Hassner, "GPU-Based Computation of 2D Least Median of Squares with Applications to Fast and Robust Line Detection," http://arxiv.org/abs/1510.01041
+If you find this code useful and use it in your own work, please add a reference to our paper in your relevant publications.
+Copyright 2015, Gil Shapira and Tal Hassner.
+The SOFTWARE ("CUDA based Least Median of Squares" and all included files) is provided "as is", without any guarantee made as to its suitability or fitness for any particular use. It may containbugs, so use of this tool is at your own risk. We take no responsibility for any damage that may unintentionally be caused through its use.
+
+0. Build Instruction
+--------------------
+
+This distribution includes visual studio 2012 proj and solution files but can easily adapted for other platfrom with NSIGHT support.
 To build the solution you need to install NSIGHT (CUDA dev env for visual studio)- https://developer.nvidia.com/nvidia-nsight-visual-studio-edition
 The code is written in C++. No third party libraries are used.
 For visualization the program dumps it's output (the input points and LMS line) in a giv file format.
 GIV is an easy to use open source software for geomerty primitive representation: http://giv.sourceforge.net/giv/
-
 To run the software you'll need NVIDIA GPU with compute capability 3.0 (Kepler or later platforms).
-
-The structure of the README file is as follows:
-
 
 1. Input
 ---------
@@ -24,7 +25,7 @@ The number of points in the input file should be a power of two.
 On the root directory you'll find an input file example named dat.txt.
 The format of the input file is as follows:
 The first number is the point count, the second is the points dimension (currently only dim = 2 is supported)
-Later we have one point per line. The first number is the X coordinate of the point and second is the y coordinate.
+Later we have one point per line. The first number is the X coordinate of the point and second is the Y coordinate.
 For instance:
 
 3 2

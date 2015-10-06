@@ -9,16 +9,19 @@ public:
 
 	~LMS2D();
 
-	void readInputFromFile(const char* file_name);
+	// input - input_points - array of float points in the format :x0 y0 x1 y1 .... xn yn
+	// input - input_points_count - number of points in the point input_points array
+	// output - lms_line_slope - the slope of the LMS line
+	// output - lms_line_intercept - the intercept of the LMS line with y axis
+	// output - min_bracelet - the LMS itself 
 
 	void compute(float* input_points, int input_points_count, float* lms_line_slope, float* lms_line_intercept, float* min_bracelet);
 
 	void compute();
 
+	// allocate resources for the computation (host and device memory). Call once before compute(...)
 	void allocate();
 
-	// dump a giv file with lms slab and line. a giv file is an easy to use, open source utility for geomtry primitives representation.
-	// you can download it here http://giv.sourceforge.net/giv/
 
 	void dumpGIVFile();
 
