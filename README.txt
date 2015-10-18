@@ -28,7 +28,7 @@ The first number is the point count, the second is the points dimension (current
 Later we have one point per line. The first number is the X coordinate of the point and second is the Y coordinate.
 For instance:
 
-3 2
+4 2
 11 12
 22.2 22
 33.1 11
